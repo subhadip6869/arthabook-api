@@ -1,4 +1,4 @@
-package app.netlify.subhacodes.arthabookapi.user.controller;
+package app.netlify.subhacodes.arthabookapi.modules.user.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
