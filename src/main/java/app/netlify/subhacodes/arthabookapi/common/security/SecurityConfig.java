@@ -1,4 +1,4 @@
-package app.netlify.subhacodes.arthabookapi.security;
+package app.netlify.subhacodes.arthabookapi.common.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
