@@ -7,8 +7,8 @@ import app.netlify.subhacodes.arthabookapi.modules.profile.dto.request.UpdateUse
 import app.netlify.subhacodes.arthabookapi.modules.profile.dto.response.UserProfileResponse;
 import app.netlify.subhacodes.arthabookapi.modules.profile.entity.User;
 import app.netlify.subhacodes.arthabookapi.modules.profile.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -39,6 +39,13 @@ public class UserService {
 
         populateProfileFields(user, null, request);
         return new UserProfileResponse(userRepository.save(user));
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileResponse getProfile(String firebaseUid) {
+        User user = userRepository.findById(firebaseUid).orElseThrow(() ->
+                new ResourceNotFoundException("User profile not found"));
+        return new UserProfileResponse(user);
     }
 
     /* Helper Methods */

@@ -23,20 +23,26 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserProfileResponse> createUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal,
                                                                  @Valid @RequestBody CreateUserRequest request) {
-        UserProfileResponse response = userService.createProfile(principal.getUid(),
-                principal.getEmail(),
+        UserProfileResponse response = userService.createProfile(principal.uid(),
+                principal.email(),
                 request
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping
-    public ResponseEntity<UserProfileResponse> updateProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal,
-                                                             @Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<UserProfileResponse> updateUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal,
+                                                                 @Valid @RequestBody UpdateUserRequest request) {
         UserProfileResponse response = userService.updateProfile(
-                principal.getUid(),
+                principal.uid(),
                 request
         );
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<UserProfileResponse> getUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal) {
+        UserProfileResponse response = userService.getProfile(principal.uid());
         return ResponseEntity.ok(response);
     }
 }
