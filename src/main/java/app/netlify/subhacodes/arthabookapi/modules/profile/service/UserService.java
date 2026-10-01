@@ -48,6 +48,12 @@ public class UserService {
         return new UserProfileResponse(user);
     }
 
+    @Transactional
+    public String deleteProfile(String firebaseUid) {
+        userRepository.deleteById(firebaseUid);
+        return "Profile deleted successfully: " + firebaseUid;
+    }
+
     /* Helper Methods */
     private void populateProfileFields(User user, CreateUserRequest createRequest, UpdateUserRequest updateRequest) {
         if (createRequest != null) {

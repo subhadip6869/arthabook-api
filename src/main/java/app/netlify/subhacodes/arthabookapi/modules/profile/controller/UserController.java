@@ -12,7 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/v1/profile/users")
 public class UserController {
     private final UserService userService;
 
@@ -43,6 +43,12 @@ public class UserController {
     @GetMapping
     public ResponseEntity<UserProfileResponse> getUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal) {
         UserProfileResponse response = userService.getProfile(principal.uid());
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<String> deleteUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal) {
+        String response = userService.deleteProfile(principal.uid());
         return ResponseEntity.ok(response);
     }
 }
