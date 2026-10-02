@@ -19,9 +19,10 @@ public record UserProfileResponse(
         UserStatus status,
         boolean onboardingCompleted,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        FinancialProfileResponse financialProfile
 ) {
-    public UserProfileResponse(User user) {
+    public UserProfileResponse(User user, FinancialProfileResponse financialProfile) {
         this(user.getUserId(),
                 user.getEmail(),
                 user.getIsdCode(),
@@ -33,7 +34,12 @@ public record UserProfileResponse(
                 user.getStatus(),
                 user.isOnboardingCompleted(),
                 user.getCreatedAt(),
-                user.getUpdatedAt()
+                user.getUpdatedAt(),
+                financialProfile
         );
+    }
+
+    public UserProfileResponse(User user) {
+        this(user, null);
     }
 }

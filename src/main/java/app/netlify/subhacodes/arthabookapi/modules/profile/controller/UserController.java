@@ -12,7 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/profile/users")
+@RequestMapping("/api/v1/profile/users" )
 public class UserController {
     private final UserService userService;
 
@@ -21,9 +21,11 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserProfileResponse> createUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal,
-                                                                 @Valid @RequestBody CreateUserRequest request) {
-        UserProfileResponse response = userService.createProfile(principal.uid(),
+    public ResponseEntity<UserProfileResponse> createUserProfile(
+            @AuthenticationPrincipal FirebaseUserPrincipal principal,
+            @Valid @RequestBody CreateUserRequest request) {
+        UserProfileResponse response = userService.createProfile(
+                principal.uid(),
                 principal.email(),
                 request
         );
@@ -31,8 +33,9 @@ public class UserController {
     }
 
     @PutMapping
-    public ResponseEntity<UserProfileResponse> updateUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal,
-                                                                 @Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<UserProfileResponse> updateUserProfile(
+            @AuthenticationPrincipal FirebaseUserPrincipal principal,
+            @Valid @RequestBody UpdateUserRequest request) {
         UserProfileResponse response = userService.updateProfile(
                 principal.uid(),
                 request
@@ -41,13 +44,15 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<UserProfileResponse> getUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal) {
+    public ResponseEntity<UserProfileResponse> getUserProfile(
+            @AuthenticationPrincipal FirebaseUserPrincipal principal) {
         UserProfileResponse response = userService.getProfile(principal.uid());
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping
-    public ResponseEntity<String> deleteUserProfile(@AuthenticationPrincipal FirebaseUserPrincipal principal) {
+    public ResponseEntity<String> deleteUserProfile(
+            @AuthenticationPrincipal FirebaseUserPrincipal principal) {
         String response = userService.deleteProfile(principal.uid());
         return ResponseEntity.ok(response);
     }

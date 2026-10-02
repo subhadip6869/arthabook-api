@@ -3,10 +3,8 @@ package app.netlify.subhacodes.arthabookapi.modules.profile.entity;
 import app.netlify.subhacodes.arthabookapi.modules.profile.enums.UserGender;
 import app.netlify.subhacodes.arthabookapi.modules.profile.enums.UserStatus;
 import jakarta.persistence.*;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -37,38 +35,43 @@ public class User {
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
-    @Column(name = "profile_photo_url", columnDefinition = "TEXT")
+    @Column(name = "profile_photo_url", columnDefinition = "TEXT" )
     private String profilePhotoUrl;
 
-    @Column(name = "date_of_birth")
+    @Column(name = "date_of_birth" )
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "gender", columnDefinition = "user_gender" )
     private UserGender gender;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    @ColumnDefault("'ACTIVE'")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", nullable = false, columnDefinition = "user_status" )
+    @ColumnDefault("'ACTIVE'" )
     private UserStatus status = UserStatus.ACTIVE;
 
+    @OneToOne(mappedBy = "user" )
+    private FinancialProfile financialProfile;
+
     @Column(name = "onboarding_completed", nullable = false)
-    @ColumnDefault("false")
+    @ColumnDefault("false" )
     private boolean onboardingCompleted = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP" )
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP" )
     private OffsetDateTime updatedAt;
 
     @Version
     @Column(name = "version", nullable = false)
-    @ColumnDefault("0")
+    @ColumnDefault("0" )
     private Long version = 0L;
 
     public String getUserId() {
@@ -149,6 +152,18 @@ public class User {
 
     public void setOnboardingCompleted(boolean onboardingCompleted) {
         this.onboardingCompleted = onboardingCompleted;
+    }
+
+    public FinancialProfile getFinancialProfile() {
+        return financialProfile;
+    }
+
+    public void setFinancialProfile(FinancialProfile financialProfile) {
+        this.financialProfile = financialProfile;
+
+        if (financialProfile != null && financialProfile.getUser() != this) {
+            financialProfile.setUser(this);
+        }
     }
 
     public OffsetDateTime getCreatedAt() {

@@ -8,20 +8,20 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record CreateUserRequest(
-        @NotBlank
+        @NotBlank(message = "Full name must not be blank" )
         @Size(max = 150)
         String fullName,
 
         @Size(max = 5)
-        @Pattern(regexp = "^(?!\\s*$).+", message = "ISD code must not be blank")
+        @Pattern(regexp = "^(?!\\s*$).+", message = "ISD code must not be blank" )
         String isdCode,
 
         @Size(max = 20)
-        @Pattern(regexp = "^(?!\\s*$).+", message = "must not be blank")
+        @Pattern(regexp = "^(?!\\s*$).+", message = "Mobile must not be blank" )
         String mobileNumber,
 
         @Size(max = 2000)
-        @Pattern(regexp = "^(?!\\s*$).+", message = "Profile photo URL must not be blank")
+        @Pattern(regexp = "^(?!\\s*$).+", message = "Profile photo URL must not be blank" )
         String profilePhotoUrl,
 
         LocalDate dateOfBirth,

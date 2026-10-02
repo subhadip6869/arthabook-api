@@ -4,6 +4,7 @@ import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceAlreadyExis
 import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceNotFoundException;
 import app.netlify.subhacodes.arthabookapi.modules.profile.dto.request.CreateUserRequest;
 import app.netlify.subhacodes.arthabookapi.modules.profile.dto.request.UpdateUserRequest;
+import app.netlify.subhacodes.arthabookapi.modules.profile.dto.response.FinancialProfileResponse;
 import app.netlify.subhacodes.arthabookapi.modules.profile.dto.response.UserProfileResponse;
 import app.netlify.subhacodes.arthabookapi.modules.profile.entity.User;
 import app.netlify.subhacodes.arthabookapi.modules.profile.repository.UserRepository;
@@ -21,55 +22,77 @@ public class UserService {
     @Transactional
     public UserProfileResponse createProfile(String firebaseUid, String email, CreateUserRequest request) {
         if (userRepository.existsById(firebaseUid)) {
-            throw new ResourceAlreadyExistsException("Profile already exists");
+            throw new ResourceAlreadyExistsException("Profile already exists" );
         }
 
         User user = new User();
         user.setUserId(firebaseUid);
         user.setEmail(email);
+        user.setFullName(request.fullName());
+        user.setIsdCode(request.isdCode());
+        user.setMobileNumber(request.mobileNumber());
+        user.setProfilePhotoUrl(request.profilePhotoUrl());
+        user.setDateOfBirth(request.dateOfBirth());
+        user.setGender(request.gender());
 
-        populateProfileFields(user, request, null);
-        return new UserProfileResponse(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        return new UserProfileResponse(savedUser, null);
     }
 
     @Transactional
     public UserProfileResponse updateProfile(String firebaseUid, UpdateUserRequest request) {
-        User user = userRepository.findById(firebaseUid).orElseThrow(() ->
-                new ResourceNotFoundException("User profile not found"));
+        User user = findProfileWithFinancialProfile(firebaseUid);
 
-        populateProfileFields(user, null, request);
-        return new UserProfileResponse(userRepository.save(user));
+        // Partial update – only set fields that are present (not null)
+        if (request.fullName() != null) {
+            user.setFullName(request.fullName());
+        }
+        if (request.isdCode() != null) {
+            user.setIsdCode(request.isdCode());
+        }
+        if (request.mobileNumber() != null) {
+            user.setMobileNumber(request.mobileNumber());
+        }
+        if (request.profilePhotoUrl() != null) {
+            user.setProfilePhotoUrl(request.profilePhotoUrl());
+        }
+        if (request.dateOfBirth() != null) {
+            user.setDateOfBirth(request.dateOfBirth());
+        }
+        if (request.gender() != null) {
+            user.setGender(request.gender());
+        }
+
+        User savedUser = userRepository.save(user);
+        return toProfileResponse(savedUser);
     }
 
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(String firebaseUid) {
-        User user = userRepository.findById(firebaseUid).orElseThrow(() ->
-                new ResourceNotFoundException("User profile not found"));
-        return new UserProfileResponse(user);
+        User user = findProfileWithFinancialProfile(firebaseUid);
+        return toProfileResponse(user);
     }
 
     @Transactional
     public String deleteProfile(String firebaseUid) {
+        if (!userRepository.existsById(firebaseUid)) {
+            throw new ResourceNotFoundException("User profile not found" );
+        }
         userRepository.deleteById(firebaseUid);
-        return "Profile deleted successfully: " + firebaseUid;
+        return firebaseUid;
     }
 
-    /* Helper Methods */
-    private void populateProfileFields(User user, CreateUserRequest createRequest, UpdateUserRequest updateRequest) {
-        if (createRequest != null) {
-            user.setFullName(createRequest.fullName());
-            user.setIsdCode(createRequest.isdCode());
-            user.setMobileNumber(createRequest.mobileNumber());
-            user.setDateOfBirth(createRequest.dateOfBirth());
-            user.setGender(createRequest.gender());
-            user.setProfilePhotoUrl(createRequest.profilePhotoUrl());
-        } else {
-            user.setFullName(updateRequest.fullName());
-            user.setIsdCode(updateRequest.isdCode());
-            user.setMobileNumber(updateRequest.mobileNumber());
-            user.setDateOfBirth(updateRequest.dateOfBirth());
-            user.setGender(updateRequest.gender());
-            user.setProfilePhotoUrl(updateRequest.profilePhotoUrl());
-        }
+    // Helper methods
+    private User findProfileWithFinancialProfile(String firebaseUid) {
+        return userRepository.findByIdWithFinancialProfile(firebaseUid)
+                .orElseThrow(() -> new ResourceNotFoundException("User profile not found" ));
+    }
+
+    private UserProfileResponse toProfileResponse(User user) {
+        FinancialProfileResponse financialProfile = user.getFinancialProfile() != null
+                ? new FinancialProfileResponse(user.getFinancialProfile())
+                : null;
+
+        return new UserProfileResponse(user, financialProfile);
     }
 }
