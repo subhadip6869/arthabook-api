@@ -8,7 +8,7 @@ import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "financial_profiles", schema = "profile" )
+@Table(name = "financial_profiles", schema = "profile")
 @DynamicUpdate
 public class FinancialProfile {
     @Id
@@ -17,20 +17,21 @@ public class FinancialProfile {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "occupation", columnDefinition = "occupation" )
+    @Column(name = "occupation", columnDefinition = "occupation")
     private Occupation occupation;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "annual_income_range", columnDefinition = "annual_income_range" )
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "annual_income_range", columnDefinition = "annual_income_range")
     private AnnualIncomeRange annualIncomeRange;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "risk_appetite", columnDefinition = "risk_appetite" )
+    @Column(name = "risk_appetite", columnDefinition = "risk_appetite")
     private RiskAppetite riskAppetite;
 
     @Column(name = "base_currency", length = 3, nullable = false)
-    @ColumnDefault("'INR'" )
+    @ColumnDefault("'INR'")
     private String baseCurrency;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -38,7 +39,7 @@ public class FinancialProfile {
     @JoinColumn(
             name = "user_id",
             referencedColumnName = "user_id",
-            foreignKey = @ForeignKey(name = "fk_financial_profiles_user" )
+            foreignKey = @ForeignKey(name = "fk_financial_profiles_user")
     )
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
