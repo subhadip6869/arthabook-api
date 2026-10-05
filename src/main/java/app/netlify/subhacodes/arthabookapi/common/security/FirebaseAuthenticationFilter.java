@@ -21,6 +21,12 @@ import java.util.List;
 @Component
 public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
 
+    private final FirebaseAuth firebaseAuth;
+
+    public FirebaseAuthenticationFilter(FirebaseAuth firebaseAuth) {
+        this.firebaseAuth = firebaseAuth;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
@@ -34,7 +40,7 @@ public class FirebaseAuthenticationFilter extends OncePerRequestFilter {
 
         String token = header.substring(7); // removes "Bearer " - 7 character, and take only the token
         try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
             FirebaseUserPrincipal principal = new FirebaseUserPrincipal(decodedToken.getUid(),
                     decodedToken.getEmail(),
                     decodedToken.isEmailVerified()
