@@ -13,3 +13,26 @@ CREATE TYPE finance.account_status AS ENUM (
     'ACTIVE',
     'INACTIVE',
     'CLOSED');
+
+CREATE TYPE finance.holding_type AS ENUM (
+    'STOCK',
+    'MUTUAL_FUND',
+    'ETF',
+    'BOND',
+    'GOVERNMENT_SECURITY',
+    'NSC',
+    'KVP',
+    'FIXED_DEPOSIT',
+    'RECURRING_DEPOSIT',
+    'PPF',
+    'NPS',
+    'GOLD',
+    'REAL_ESTATE',
+    'CASH',
+    'OTHER'
+    );
+
+CREATE TYPE finance.holding_status AS ENUM (
+    'ACTIVE',
+    'CLOSED'
+    );

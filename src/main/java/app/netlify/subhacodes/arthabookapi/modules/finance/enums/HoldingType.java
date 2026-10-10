@@ -1,10 +1,10 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.enums;
 
-public enum InstrumentType {
+public enum HoldingType {
     STOCK,
-    BOND,
     MUTUAL_FUND,
     ETF,
+    BOND,
     GOVERNMENT_SECURITY,
     NSC,
     KVP,
@@ -13,5 +13,7 @@ public enum InstrumentType {
     PPF,
     NPS,
     GOLD,
+    REAL_ESTATE,
+    CASH,
     OTHER
 }

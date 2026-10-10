@@ -15,7 +15,7 @@ import java.util.UUID;
         name = "accounts",
         schema = "finance",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uq_account_user_account_number", columnNames = {"user_id", "account_number"})
+                @UniqueConstraint(name = "uq_accounts_account_id_user_id", columnNames = {"account_id", "user_id"}),
         }
 )
 @DynamicUpdate
@@ -31,13 +31,13 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "account_type", columnDefinition = "account_type", nullable = false)
+    @Column(name = "account_type", columnDefinition = "finance.account_type", nullable = false)
     private AccountType accountType;
 
     @Column(name = "provider_name", length = 150)
     private String providerName;
 
-    @Column(name = "account_number", length = 50, nullable = false)
+    @Column(name = "account_number", length = 50)
     private String accountNumber;
 
     @Column(name = "currency", length = 3, nullable = false)
@@ -46,7 +46,7 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "account_status", columnDefinition = "account_status", nullable = false)
+    @Column(name = "account_status", columnDefinition = "finance.account_status", nullable = false)
     @ColumnDefault("'ACTIVE'")
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
