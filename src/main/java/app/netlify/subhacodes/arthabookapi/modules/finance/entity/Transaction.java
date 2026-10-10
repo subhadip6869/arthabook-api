@@ -9,6 +9,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -46,20 +47,8 @@ public class Transaction {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns(
-            value = {
-                    @JoinColumn(
-                            name = "position_id",
-                            referencedColumnName = "position_id",
-                            nullable = false
-                    ),
-                    @JoinColumn(
-                            name = "user_id",
-                            referencedColumnName = "user_id",
-                            insertable = false,
-                            updatable = false
-                    )
-            },
+    @JoinColumn(
+            name = "position_id", referencedColumnName = "position_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_transactions_position_id")
     )
     @OnDelete(action = OnDeleteAction.RESTRICT)
@@ -114,7 +103,11 @@ public class Transaction {
 
     @Version
     @Column(name = "version", nullable = false)
-    private Long version = 0L;
+    @ColumnDefault("0")
+    private Long version;
+
+    public Transaction() {
+    }
 
     public UUID getTransactionId() {
         return transactionId;
@@ -229,5 +222,18 @@ public class Transaction {
 
     public Long getVersion() {
         return version;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Transaction that = (Transaction) o;
+        return transactionId != null && Objects.equals(transactionId, that.transactionId);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

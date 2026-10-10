@@ -8,6 +8,7 @@ import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -44,11 +45,8 @@ public class Holding {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(
-            name = "holding_type",
-            columnDefinition = "finance.holding_type",
-            nullable = false
-    )
+    @Column(name = "holding_type", nullable = false,
+            columnDefinition = "finance.holding_type")
     private HoldingType holdingType;
 
     @Column(name = "currency", length = 3, nullable = false)
@@ -57,11 +55,8 @@ public class Holding {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(
-            name = "holding_status",
-            columnDefinition = "finance.holding_status",
-            nullable = false
-    )
+    @Column(name = "holding_status", nullable = false,
+            columnDefinition = "finance.holding_status")
     @ColumnDefault("'ACTIVE'")
     private HoldingStatus holdingStatus = HoldingStatus.ACTIVE;
 
@@ -81,7 +76,10 @@ public class Holding {
     @Version
     @Column(name = "version", nullable = false)
     @ColumnDefault("0")
-    private Long version = 0L;
+    private Long version;
+
+    public Holding() {
+    }
 
     public UUID getHoldingId() {
         return holdingId;
@@ -145,5 +143,18 @@ public class Holding {
 
     public Long getVersion() {
         return version;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Holding holding = (Holding) o;
+        return holdingId != null && Objects.equals(holdingId, holding.holdingId);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

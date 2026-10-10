@@ -8,6 +8,7 @@ import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -25,6 +26,16 @@ public class Account {
     @Column(name = "account_id", nullable = false, updatable = false)
     @ColumnDefault("gen_random_uuid()")
     private UUID accountId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "user_id",
+            referencedColumnName = "user_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_accounts_user_id")
+    )
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
 
     @Column(name = "account_name", length = 150, nullable = false)
     private String accountName;
@@ -53,16 +64,6 @@ public class Account {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "user_id",
-            referencedColumnName = "user_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_accounts_user_id")
-    )
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private User user;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     @ColumnDefault("CURRENT_TIMESTAMP")
@@ -76,10 +77,21 @@ public class Account {
     @Version
     @Column(name = "version", nullable = false)
     @ColumnDefault("0")
-    private Long version = 0L;
+    private Long version;
+
+    public Account() {
+    }
 
     public UUID getAccountId() {
         return accountId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getAccountName() {
@@ -150,11 +162,16 @@ public class Account {
         return version;
     }
 
-    public User getUser() {
-        return user;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return accountId != null && Objects.equals(accountId, account.accountId);
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

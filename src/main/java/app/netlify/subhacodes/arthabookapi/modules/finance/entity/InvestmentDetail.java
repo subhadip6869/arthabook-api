@@ -1,14 +1,12 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -18,7 +16,7 @@ import java.util.UUID;
         check = {
                 @CheckConstraint(name = "ck_investment_details_interest_rate", constraint = "interest_rate IS NULL OR interest_rate >= 0"),
                 @CheckConstraint(name = "ck_investment_details_maturity_amount", constraint = "maturity_amount IS NULL OR maturity_amount >= 0"),
-                @CheckConstraint(name = "ck_investment_details_dates", constraint = "investment_date IS NULL OR maturity_date IS NULL OR maturity_date >= investment_date)")
+                @CheckConstraint(name = "ck_investment_details_dates", constraint = "investment_date IS NULL OR maturity_date IS NULL OR maturity_date >= investment_date")
         }
 )
 @DynamicUpdate
@@ -30,8 +28,9 @@ public class InvestmentDetail {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
     @JoinColumn(
-            name = "position_id", nullable = false,
+            name = "position_id", referencedColumnName = "position_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_investment_details_position"))
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private HoldingPosition position;
 
     @Column(name = "issuer_name", length = 150)
@@ -70,7 +69,10 @@ public class InvestmentDetail {
 
     @Version
     @Column(name = "version", nullable = false)
-    private Long version = 0L;
+    private Long version;
+
+    public InvestmentDetail() {
+    }
 
     public UUID getPositionId() {
         return positionId;
@@ -82,9 +84,7 @@ public class InvestmentDetail {
 
     public void setPosition(HoldingPosition position) {
         this.position = position;
-        this.positionId = position != null
-                ? position.getPositionId()
-                : null;
+        this.positionId = (position != null) ? position.getPositionId() : null;
     }
 
     public String getIssuerName() {
@@ -161,5 +161,18 @@ public class InvestmentDetail {
 
     public Long getVersion() {
         return version;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        InvestmentDetail that = (InvestmentDetail) o;
+        return positionId != null && Objects.equals(positionId, that.positionId);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

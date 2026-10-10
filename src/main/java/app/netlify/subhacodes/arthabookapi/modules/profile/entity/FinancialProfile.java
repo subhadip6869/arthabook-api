@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "financial_profiles", schema = "profile")
 @DynamicUpdate
@@ -17,28 +19,29 @@ public class FinancialProfile {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "occupation", columnDefinition = "occupation")
+    @Column(name = "occupation", columnDefinition = "profile.occupation")
     private Occupation occupation;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "annual_income_range", columnDefinition = "annual_income_range")
+    @Column(name = "annual_income_range", columnDefinition = "profile.annual_income_range")
     private AnnualIncomeRange annualIncomeRange;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "risk_appetite", columnDefinition = "risk_appetite")
+    @Column(name = "risk_appetite", columnDefinition = "profile.risk_appetite")
     private RiskAppetite riskAppetite;
 
     @Column(name = "base_currency", length = 3, nullable = false)
     @ColumnDefault("'INR'")
-    private String baseCurrency;
+    private String baseCurrency = "INR";
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
     @JoinColumn(
             name = "user_id",
             referencedColumnName = "user_id",
+            nullable = false,
             foreignKey = @ForeignKey(name = "fk_financial_profiles_user")
     )
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -48,9 +51,20 @@ public class FinancialProfile {
     }
 
     public FinancialProfile(User user) {
+        setUser(user);
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
         this.user = user;
-        this.userId = user.getUserId();
-        this.baseCurrency = "INR";
+        this.userId = (user != null) ? user.getUserId() : null;
     }
 
     public Occupation getOccupation() {
@@ -85,20 +99,16 @@ public class FinancialProfile {
         this.baseCurrency = baseCurrency;
     }
 
-    public String getUserId() {
-        return userId;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FinancialProfile that = (FinancialProfile) o;
+        return userId != null && Objects.equals(userId, that.userId);
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-        this.userId = user.getUserId();
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

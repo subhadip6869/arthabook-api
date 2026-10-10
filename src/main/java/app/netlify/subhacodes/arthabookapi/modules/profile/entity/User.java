@@ -8,6 +8,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(
@@ -35,44 +36,50 @@ public class User {
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
-    @Column(name = "profile_photo_url", columnDefinition = "TEXT" )
+    @Column(name = "profile_photo_url",
+            columnDefinition = "TEXT")
     private String profilePhotoUrl;
 
-    @Column(name = "date_of_birth" )
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "gender", columnDefinition = "user_gender" )
+    @Column(name = "gender",
+            columnDefinition = "profile.user_gender")
     private UserGender gender;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "status", nullable = false, columnDefinition = "user_status" )
-    @ColumnDefault("'ACTIVE'" )
+    @Column(name = "status", nullable = false,
+            columnDefinition = "profile.user_status")
+    @ColumnDefault("'ACTIVE'")
     private UserStatus status = UserStatus.ACTIVE;
 
-    @OneToOne(mappedBy = "user" )
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private FinancialProfile financialProfile;
 
     @Column(name = "onboarding_completed", nullable = false)
-    @ColumnDefault("false" )
+    @ColumnDefault("false")
     private boolean onboardingCompleted = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP" )
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    @ColumnDefault("CURRENT_TIMESTAMP" )
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private OffsetDateTime updatedAt;
 
     @Version
     @Column(name = "version", nullable = false)
-    @ColumnDefault("0" )
-    private Long version = 0L;
+    @ColumnDefault("0")
+    private Long version;
+
+    public User() {
+    }
 
     public String getUserId() {
         return userId;
@@ -159,8 +166,11 @@ public class User {
     }
 
     public void setFinancialProfile(FinancialProfile financialProfile) {
-        this.financialProfile = financialProfile;
+        if (this.financialProfile != null && this.financialProfile != financialProfile) {
+            this.financialProfile.setUser(null);
+        }
 
+        this.financialProfile = financialProfile;
         if (financialProfile != null && financialProfile.getUser() != this) {
             financialProfile.setUser(this);
         }
@@ -180,5 +190,18 @@ public class User {
 
     public Long getVersion() {
         return version;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return userId != null && Objects.equals(userId, user.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

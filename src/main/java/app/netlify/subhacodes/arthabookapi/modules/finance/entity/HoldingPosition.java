@@ -3,11 +3,13 @@ package app.netlify.subhacodes.arthabookapi.modules.finance.entity;
 import app.netlify.subhacodes.arthabookapi.modules.finance.enums.HoldingStatus;
 import app.netlify.subhacodes.arthabookapi.modules.profile.entity.User;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
 import org.hibernate.annotations.*;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -27,6 +29,7 @@ import java.util.UUID;
                 @Index(name = "idx_positions_account_user", columnList = "account_id, user_id")
         }
 )
+@DynamicUpdate
 public class HoldingPosition {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -41,26 +44,23 @@ public class HoldingPosition {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns(
-            value = {
-                    @JoinColumn(name = "holding_id", referencedColumnName = "holding_id", nullable = false),
-                    @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
-            },
+    @JoinColumn(
+            name = "holding_id", referencedColumnName = "holding_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_positions_holding")
     )
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Holding holding;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns(
-            value = {
-                    @JoinColumn(name = "account_id", referencedColumnName = "account_id", nullable = false),
-                    @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
-            },
+    @JoinColumn(
+            name = "account_id", referencedColumnName = "account_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_positions_account")
     )
     @OnDelete(action = OnDeleteAction.RESTRICT)
     private Account account;
+
+    @OneToOne(mappedBy = "position", cascade = CascadeType.ALL, orphanRemoval = true)
+    private InvestmentDetail investmentDetail;
 
     @Column(name = "position_name", length = 200)
     private String positionName;
@@ -91,15 +91,21 @@ public class HoldingPosition {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private OffsetDateTime updatedAt;
 
     @Version
     @Column(name = "version", nullable = false)
+    @ColumnDefault("0")
     private Long version;
+
+    public HoldingPosition() {
+    }
 
     public UUID getPositionId() {
         return positionId;
@@ -132,6 +138,20 @@ public class HoldingPosition {
         this.account = account;
         if (account != null) {
             this.user = account.getUser();
+        }
+    }
+
+    public InvestmentDetail getInvestmentDetail() {
+        return investmentDetail;
+    }
+
+    public void setInvestmentDetail(InvestmentDetail investmentDetail) {
+        if (this.investmentDetail != null && this.investmentDetail != investmentDetail) {
+            this.investmentDetail.setPosition(null);
+        }
+        this.investmentDetail = investmentDetail;
+        if (investmentDetail != null && investmentDetail.getPosition() != this) {
+            investmentDetail.setPosition(this);
         }
     }
 
@@ -201,5 +221,18 @@ public class HoldingPosition {
 
     public Long getVersion() {
         return version;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HoldingPosition that = (HoldingPosition) o;
+        return positionId != null && Objects.equals(positionId, that.positionId);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
