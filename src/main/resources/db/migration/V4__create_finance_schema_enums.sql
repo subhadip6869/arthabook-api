@@ -36,3 +36,18 @@ CREATE TYPE finance.holding_status AS ENUM (
     'ACTIVE',
     'CLOSED'
     );
+
+CREATE TYPE finance.transaction_type AS ENUM (
+    'BUY',
+    'SELL',
+    'DEPOSIT',
+    'WITHDRAWAL',
+    'DIVIDEND',
+    'INTEREST',
+    'FEE',
+    'TAX',
+    'TRANSFER_IN',
+    'TRANSFER_OUT',
+    'MATURITY',
+    'OTHER'
+    );
