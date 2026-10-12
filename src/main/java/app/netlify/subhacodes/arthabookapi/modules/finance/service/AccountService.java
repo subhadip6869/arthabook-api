@@ -9,10 +9,11 @@ import app.netlify.subhacodes.arthabookapi.modules.finance.enums.AccountStatus;
 import app.netlify.subhacodes.arthabookapi.modules.finance.repository.AccountRepository;
 import app.netlify.subhacodes.arthabookapi.modules.profile.entity.User;
 import app.netlify.subhacodes.arthabookapi.modules.profile.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -31,10 +32,8 @@ public class AccountService {
 
     @Transactional
     public AccountResponse createAccount(String userId, CreateAccountRequest request) {
-        User user = userRepository.findById(userId).orElseThrow(() ->
-                new ResourceNotFoundException(
-                        "User not found with id: " + userId
-                ));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Account account = new Account();
 
@@ -50,11 +49,9 @@ public class AccountService {
         return new AccountResponse(savedAccount);
     }
 
-    public List<AccountResponse> getAccounts(String userId) {
-        return accountRepository.findAllByUser_UserId(userId)
-                .stream()
-                .map(AccountResponse::new)
-                .toList();
+    public Page<AccountResponse> getAccounts(String userId, Pageable pageable) {
+        return accountRepository.findAllByUser_UserId(userId, pageable)
+                .map(AccountResponse::new);
     }
 
     public AccountResponse getAccount(UUID accountId, String userId) {
@@ -80,9 +77,7 @@ public class AccountService {
     @Transactional
     public AccountResponse updateAccountStatus(UUID accountId, String userId, AccountStatus status) {
         if (status == null) {
-            throw new IllegalArgumentException(
-                    "Account status must not be null"
-            );
+            throw new IllegalArgumentException("Account status must not be null");
         }
 
         Account account = findOwnedAccount(accountId, userId);
@@ -101,10 +96,7 @@ public class AccountService {
     }
 
     private Account findOwnedAccount(UUID accountId, String userId) {
-        return accountRepository
-                .findByAccountIdAndUser_UserId(accountId, userId)
-                .orElseThrow(
-                        () -> new ResourceNotFoundException("Account not found with id: " + accountId)
-                );
+        return accountRepository.findByAccountIdAndUser_UserId(accountId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
     }
 }

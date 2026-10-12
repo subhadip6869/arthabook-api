@@ -56,7 +56,7 @@ public class HoldingPosition {
             name = "account_id", referencedColumnName = "account_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_positions_account")
     )
-    @OnDelete(action = OnDeleteAction.RESTRICT)
+    @OnDelete(action = OnDeleteAction.NO_ACTION)
     private Account account;
 
     @OneToOne(mappedBy = "position", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -125,9 +125,6 @@ public class HoldingPosition {
 
     public void setHolding(Holding holding) {
         this.holding = holding;
-        if (holding != null) {
-            this.user = holding.getUser();
-        }
     }
 
     public Account getAccount() {
@@ -136,9 +133,6 @@ public class HoldingPosition {
 
     public void setAccount(Account account) {
         this.account = account;
-        if (account != null) {
-            this.user = account.getUser();
-        }
     }
 
     public InvestmentDetail getInvestmentDetail() {
