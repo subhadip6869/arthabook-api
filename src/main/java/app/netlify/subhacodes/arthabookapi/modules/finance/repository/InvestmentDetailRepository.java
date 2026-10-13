@@ -1,9 +1,10 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.repository;
 
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.InvestmentDetail;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,7 +13,7 @@ public interface InvestmentDetailRepository extends JpaRepository<InvestmentDeta
             UUID positionId, String userId
     );
 
-    List<InvestmentDetail> findAllByPosition_User_UserId(String userId);
+    Page<InvestmentDetail> findAllByPosition_User_UserId(String userId, Pageable pageable);
 
     boolean existsByPosition_PositionId(UUID positionId);
 }
