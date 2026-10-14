@@ -53,9 +53,6 @@ public class HoldingPositionService {
 
         position.setPositionName(normalize(request.positionName()));
         position.setFolioNumber(normalize(request.folioNumber()));
-        position.setQuantity(request.quantity());
-        position.setAverageCost(request.averageCost());
-        position.setCostBasis(request.costBasis());
         position.setNotes(normalize(request.notes()));
 
         HoldingPosition savedPosition = holdingPositionRepository.save(position);
@@ -121,9 +118,6 @@ public class HoldingPositionService {
 
         position.setPositionName(normalize(request.positionName()));
         position.setFolioNumber(normalize(request.folioNumber()));
-        position.setQuantity(request.quantity());
-        position.setAverageCost(request.averageCost());
-        position.setCostBasis(request.costBasis());
         position.setNotes(normalize(request.notes()));
 
         // No save() is needed: position is a managed entity.

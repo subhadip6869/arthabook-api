@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,6 +23,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
                                                                                    Pageable pageable);
 
     Optional<Transaction> findByTransactionIdAndUser_UserId(UUID transactionId, String userId);
+
+
+    List<Transaction> findAllByUser_UserIdAndPosition_PositionIdOrderByTransactionDateAscCreatedAtAscTransactionIdAsc(
+            String userId,
+            UUID positionId
+    );
+
 
     boolean existsByTransactionIdAndUser_UserId(UUID transactionId, String userId);
 }

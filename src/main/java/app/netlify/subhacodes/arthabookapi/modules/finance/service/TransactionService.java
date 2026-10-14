@@ -23,12 +23,15 @@ import java.util.UUID;
 public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final HoldingPositionRepository holdingPositionRepository;
+    private final PositionBalanceService positionBalanceService;
 
     public TransactionService(
             TransactionRepository transactionRepository,
-            HoldingPositionRepository holdingPositionRepository) {
+            HoldingPositionRepository holdingPositionRepository,
+            PositionBalanceService positionBalanceService) {
         this.transactionRepository = transactionRepository;
         this.holdingPositionRepository = holdingPositionRepository;
+        this.positionBalanceService = positionBalanceService;
     }
 
     @Transactional
@@ -53,6 +56,8 @@ public class TransactionService {
         transaction.setNotes(normalize(request.notes()));
 
         Transaction savedTransaction = transactionRepository.save(transaction);
+        transactionRepository.flush();
+        positionBalanceService.recalculatePosition(position.getPositionId(), userId);
 
         return new TransactionResponse(savedTransaction);
     }
@@ -104,14 +109,23 @@ public class TransactionService {
         transaction.setReferenceNumber(normalize(request.referenceNumber()));
         transaction.setNotes(normalize(request.notes()));
 
+        transactionRepository.flush();
+        positionBalanceService.recalculatePosition(transaction.getPosition().getPositionId(), userId);
+
         // Managed entity: JPA dirty checking persists the changes.
         return new TransactionResponse(transaction);
     }
 
     @Transactional
-    public void deleteTransaction(UUID transactionId, String userId) {
+    public UUID deleteTransaction(UUID transactionId, String userId) {
         Transaction transaction = findOwnedTransaction(transactionId, userId);
+        UUID positionId = transaction.getPosition().getPositionId();
+
         transactionRepository.delete(transaction);
+        transactionRepository.flush();
+
+        positionBalanceService.recalculatePosition(positionId, userId);
+        return transactionId;
     }
 
     // handler methods
