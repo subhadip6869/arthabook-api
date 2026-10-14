@@ -1,17 +1,19 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.service;
 
 import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceNotFoundException;
+import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.CreateInvestmentDetailRequest;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.InvestmentDetailResponse;
-import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.UpsertInvestmentDetailRequest;
+import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.UpdateInvestmentDetailRequest;
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.HoldingPosition;
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.InvestmentDetail;
 import app.netlify.subhacodes.arthabookapi.modules.finance.repository.HoldingPositionRepository;
 import app.netlify.subhacodes.arthabookapi.modules.finance.repository.InvestmentDetailRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -27,62 +29,96 @@ public class InvestmentDetailService {
         this.holdingPositionRepository = holdingPositionRepository;
     }
 
-    public Page<InvestmentDetailResponse> getInvestmentDetails(String userId, Pageable pageable) {
-        return investmentDetailRepository.findAllByPosition_User_UserId(userId, pageable)
-                .map(InvestmentDetailResponse::new);
+    @Transactional
+    public InvestmentDetailResponse createInvestmentDetail(UUID positionId, String userId,
+                                                           CreateInvestmentDetailRequest request) {
+        HoldingPosition position = findOwnedPosition(positionId, userId);
+
+        if (investmentDetailRepository.existsById(positionId)) {
+            throw new IllegalStateException("Investment details already exist for this position");
+        }
+
+        InvestmentDetail detail = new InvestmentDetail();
+        applyFields(
+                detail,
+                request.issuerName(),
+                request.instrumentCode(),
+                request.isin(),
+                request.exchange(),
+                request.interestRate(),
+                request.investmentDate(),
+                request.maturityDate(),
+                request.maturityAmount()
+        );
+
+        // Keep both sides of the one-to-one association synchronized.
+        position.setInvestmentDetail(detail);
+        InvestmentDetail savedDetail = investmentDetailRepository.save(detail);
+
+        return new InvestmentDetailResponse(savedDetail);
     }
 
     public InvestmentDetailResponse getInvestmentDetail(UUID positionId, String userId) {
+        findOwnedPosition(positionId, userId);
         InvestmentDetail detail = investmentDetailRepository
-                .findByPosition_PositionIdAndPosition_User_UserId(positionId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Investment detail not found for position: " + positionId));
+                .findById(positionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Investment details not found"));
 
         return new InvestmentDetailResponse(detail);
     }
 
     @Transactional
-    public InvestmentDetailResponse upsertInvestmentDetail(
-            UUID positionId,
-            String userId,
-            UpsertInvestmentDetailRequest request) {
+    public InvestmentDetailResponse updateInvestmentDetail(UUID positionId, String userId,
+                                                           UpdateInvestmentDetailRequest request) {
+        findOwnedPosition(positionId, userId);
+        InvestmentDetail detail = investmentDetailRepository.findById(positionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Investment details not found"));
 
-        HoldingPosition position = holdingPositionRepository
-                .findByPositionIdAndUser_UserId(positionId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Holding position not found with id: " + positionId));
+        applyFields(
+                detail,
+                request.issuerName(),
+                request.instrumentCode(),
+                request.isin(),
+                request.exchange(),
+                request.interestRate(),
+                request.investmentDate(),
+                request.maturityDate(),
+                request.maturityAmount()
+        );
 
-        InvestmentDetail detail = investmentDetailRepository
-                .findByPosition_PositionIdAndPosition_User_UserId(positionId, userId)
-                .orElseGet(() -> {
-                    InvestmentDetail newDetail = new InvestmentDetail();
-                    newDetail.setPosition(position);
-                    position.setInvestmentDetail(newDetail);
-                    return newDetail;
-                });
-
-        detail.setIssuerName(normalize(request.issuerName()));
-        detail.setInstrumentCode(normalize(request.instrumentCode()));
-        detail.setIsin(normalize(request.isin()));
-        detail.setExchange(normalize(request.exchange()));
-        detail.setInterestRate(request.interestRate());
-        detail.setInvestmentDate(request.investmentDate());
-        detail.setMaturityDate(request.maturityDate());
-        detail.setMaturityAmount(request.maturityAmount());
-
-        InvestmentDetail savedDetail = investmentDetailRepository.save(detail);
-        return new InvestmentDetailResponse(savedDetail);
+        // The entity is managed; JPA dirty checking persists the changes.
+        return new InvestmentDetailResponse(detail);
     }
 
     @Transactional
     public void deleteInvestmentDetail(UUID positionId, String userId) {
-        InvestmentDetail detail = investmentDetailRepository
-                .findByPosition_PositionIdAndPosition_User_UserId(positionId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Investment detail not found for position: " + positionId));
-
-        HoldingPosition position = detail.getPosition();
-        if (position != null) {
-            position.setInvestmentDetail(null);
+        HoldingPosition position = findOwnedPosition(positionId, userId);
+        if (position.getInvestmentDetail() == null) {
+            throw new ResourceNotFoundException("Investment details not found");
         }
-        investmentDetailRepository.delete(detail);
+
+        // orphanRemoval=true deletes the associated detail at flush.
+        position.setInvestmentDetail(null);
+    }
+
+    // handler methods
+    private HoldingPosition findOwnedPosition(UUID positionId, String userId) {
+        return holdingPositionRepository
+                .findByPositionIdAndUser_UserId(positionId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Holding position not found"));
+    }
+
+    private void applyFields(InvestmentDetail detail, String issuerName, String instrumentCode, String isin,
+                             String exchange, java.math.BigDecimal interestRate, LocalDate investmentDate, LocalDate maturityDate,
+                             BigDecimal maturityAmount) {
+        detail.setIssuerName(normalize(issuerName));
+        detail.setInstrumentCode(normalize(instrumentCode));
+        detail.setIsin(normalizeIsin(isin));
+        detail.setExchange(normalize(exchange));
+        detail.setInterestRate(interestRate);
+        detail.setInvestmentDate(investmentDate);
+        detail.setMaturityDate(maturityDate);
+        detail.setMaturityAmount(maturityAmount);
     }
 
     private String normalize(String value) {
@@ -90,5 +126,10 @@ public class InvestmentDetailService {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeIsin(String isin) {
+        String normalized = normalize(isin);
+        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
     }
 }

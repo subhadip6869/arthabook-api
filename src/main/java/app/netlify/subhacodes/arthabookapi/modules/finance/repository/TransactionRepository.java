@@ -10,27 +10,18 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
-    Page<Transaction> findAllByUser_UserId(
-            String userId, Pageable pageable
-    );
+    Page<Transaction> findAllByUser_UserId(String userId, Pageable pageable);
 
-    Page<Transaction> findAllByPosition_PositionIdAndUser_UserId(
-            UUID positionId, String userId, Pageable pageable
-    );
+    Page<Transaction> findAllByUser_UserIdAndPosition_PositionId(String userId, UUID positionId, Pageable pageable);
 
-    Page<Transaction> findAllByUser_UserIdAndTransactionType(
-            String userId, TransactionType transactionType, Pageable pageable
-    );
+    Page<Transaction> findAllByUser_UserIdAndTransactionType(String userId, TransactionType transactionType,
+                                                             Pageable pageable);
 
-    Page<Transaction> findAllByPosition_PositionIdAndUser_UserIdAndTransactionType(
-            UUID positionId, String userId, TransactionType transactionType, Pageable pageable
-    );
+    Page<Transaction> findAllByUser_UserIdAndPosition_PositionIdAndTransactionType(String userId, UUID positionId,
+                                                                                   TransactionType transactionType,
+                                                                                   Pageable pageable);
 
-    Optional<Transaction> findByTransactionIdAndUser_UserId(
-            UUID transactionId, String userId
-    );
+    Optional<Transaction> findByTransactionIdAndUser_UserId(UUID transactionId, String userId);
 
-    boolean existsByTransactionIdAndUser_UserId(
-            UUID transactionId, String userId
-    );
+    boolean existsByTransactionIdAndUser_UserId(UUID transactionId, String userId);
 }

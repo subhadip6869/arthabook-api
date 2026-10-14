@@ -1,14 +1,11 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail;
 
-import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record UpsertInvestmentDetailRequest(
+public record CreateInvestmentDetailRequest(
         @Size(max = 150)
         String issuerName,
 
@@ -25,6 +22,7 @@ public record UpsertInvestmentDetailRequest(
         @Digits(integer = 3, fraction = 4)
         BigDecimal interestRate,
 
+        @PastOrPresent
         LocalDate investmentDate,
 
         LocalDate maturityDate,

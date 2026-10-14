@@ -139,13 +139,20 @@ public class HoldingPosition {
         return investmentDetail;
     }
 
-    public void setInvestmentDetail(InvestmentDetail investmentDetail) {
-        if (this.investmentDetail != null && this.investmentDetail != investmentDetail) {
-            this.investmentDetail.setPosition(null);
+    public void setInvestmentDetail(InvestmentDetail detail) {
+        if (this.investmentDetail == detail) {
+            return;
         }
-        this.investmentDetail = investmentDetail;
-        if (investmentDetail != null && investmentDetail.getPosition() != this) {
-            investmentDetail.setPosition(this);
+
+        InvestmentDetail previous = this.investmentDetail;
+        this.investmentDetail = detail;
+
+        if (previous != null && previous.getPosition() == this) {
+            previous.setPosition(null);
+        }
+
+        if (detail != null && detail.getPosition() != this) {
+            detail.setPosition(this);
         }
     }
 
