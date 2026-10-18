@@ -24,15 +24,17 @@ public class HoldingPositionService {
     private final HoldingPositionRepository holdingPositionRepository;
     private final HoldingRepository holdingRepository;
     private final AccountRepository accountRepository;
+    private final InvestmentDetailService investmentDetailService;
 
-    public HoldingPositionService(
-            HoldingPositionRepository holdingPositionRepository,
-            HoldingRepository holdingRepository,
-            AccountRepository accountRepository) {
+    public HoldingPositionService(HoldingPositionRepository holdingPositionRepository,
+                                  HoldingRepository holdingRepository,
+                                  AccountRepository accountRepository,
+                                  InvestmentDetailService investmentDetailService) {
 
         this.holdingPositionRepository = holdingPositionRepository;
         this.holdingRepository = holdingRepository;
         this.accountRepository = accountRepository;
+        this.investmentDetailService = investmentDetailService;
     }
 
     @Transactional
@@ -55,8 +57,11 @@ public class HoldingPositionService {
         position.setFolioNumber(normalize(request.folioNumber()));
         position.setNotes(normalize(request.notes()));
 
-        HoldingPosition savedPosition = holdingPositionRepository.saveAndFlush(position);
+        if (request.investmentDetail() != null) {
+            investmentDetailService.attachInvestmentDetail(position, request.investmentDetail());
+        }
 
+        HoldingPosition savedPosition = holdingPositionRepository.saveAndFlush(position);
         return new HoldingPositionResponse(savedPosition);
     }
 
@@ -119,6 +124,10 @@ public class HoldingPositionService {
         position.setPositionName(normalize(request.positionName()));
         position.setFolioNumber(normalize(request.folioNumber()));
         position.setNotes(normalize(request.notes()));
+
+        if (request.investmentDetail() != null) {
+            investmentDetailService.upsertInvestmentDetail(position, request.investmentDetail());
+        }
 
         holdingPositionRepository.flush();
         return new HoldingPositionResponse(position);

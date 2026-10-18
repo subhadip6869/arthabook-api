@@ -37,20 +37,14 @@ public class Transaction {
     private UUID transactionId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "user_id",
-            referencedColumnName = "user_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_transactions_user_id")
-    )
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_transactions_user_id"))
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "position_id", referencedColumnName = "position_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_transactions_position_id")
-    )
+    @JoinColumn(name = "position_id", referencedColumnName = "position_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_transactions_position_id"))
     @OnDelete(action = OnDeleteAction.RESTRICT)
     private HoldingPosition position;
 

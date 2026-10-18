@@ -1,13 +1,9 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.service;
 
-import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceAlreadyExistsException;
-import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceNotFoundException;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.CreateInvestmentDetailRequest;
-import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.InvestmentDetailResponse;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.UpdateInvestmentDetailRequest;
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.HoldingPosition;
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.InvestmentDetail;
-import app.netlify.subhacodes.arthabookapi.modules.finance.repository.HoldingPositionRepository;
 import app.netlify.subhacodes.arthabookapi.modules.finance.repository.InvestmentDetailRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,28 +11,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Locale;
-import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
 public class InvestmentDetailService {
     private final InvestmentDetailRepository investmentDetailRepository;
-    private final HoldingPositionRepository holdingPositionRepository;
 
-    public InvestmentDetailService(
-            InvestmentDetailRepository investmentDetailRepository,
-            HoldingPositionRepository holdingPositionRepository) {
+    public InvestmentDetailService(InvestmentDetailRepository investmentDetailRepository) {
         this.investmentDetailRepository = investmentDetailRepository;
-        this.holdingPositionRepository = holdingPositionRepository;
     }
 
     @Transactional
-    public InvestmentDetailResponse createInvestmentDetail(UUID positionId, String userId,
-                                                           CreateInvestmentDetailRequest request) {
-        HoldingPosition position = findOwnedPosition(positionId, userId);
-
-        if (investmentDetailRepository.existsById(positionId)) {
-            throw new ResourceAlreadyExistsException("Investment details already exist for this position");
+    public InvestmentDetail attachInvestmentDetail(HoldingPosition position, CreateInvestmentDetailRequest request) {
+        if (request == null) {
+            return null;
         }
 
         InvestmentDetail detail = new InvestmentDetail();
@@ -52,28 +40,24 @@ public class InvestmentDetailService {
                 request.maturityAmount()
         );
 
-        // Keep both sides of the one-to-one association synchronized.
+        detail.setPosition(position);
         position.setInvestmentDetail(detail);
-        InvestmentDetail savedDetail = investmentDetailRepository.save(detail);
 
-        return new InvestmentDetailResponse(savedDetail);
-    }
-
-    public InvestmentDetailResponse getInvestmentDetail(UUID positionId, String userId) {
-        findOwnedPosition(positionId, userId);
-        InvestmentDetail detail = investmentDetailRepository
-                .findById(positionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Investment details not found"));
-
-        return new InvestmentDetailResponse(detail);
+        return detail;
     }
 
     @Transactional
-    public InvestmentDetailResponse updateInvestmentDetail(UUID positionId, String userId,
-                                                           UpdateInvestmentDetailRequest request) {
-        findOwnedPosition(positionId, userId);
-        InvestmentDetail detail = investmentDetailRepository.findById(positionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Investment details not found"));
+    public InvestmentDetail upsertInvestmentDetail(HoldingPosition position, UpdateInvestmentDetailRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        InvestmentDetail detail = position.getInvestmentDetail();
+        if (detail == null) {
+            detail = new InvestmentDetail();
+            detail.setPosition(position);
+            position.setInvestmentDetail(detail);
+        }
 
         applyFields(
                 detail,
@@ -87,31 +71,19 @@ public class InvestmentDetailService {
                 request.maturityAmount()
         );
 
-        // The entity is managed; JPA dirty checking persists the changes.
-        return new InvestmentDetailResponse(detail);
+        return detail;
     }
 
-    @Transactional
-    public void deleteInvestmentDetail(UUID positionId, String userId) {
-        HoldingPosition position = findOwnedPosition(positionId, userId);
-        if (position.getInvestmentDetail() == null) {
-            throw new ResourceNotFoundException("Investment details not found");
+    public void removeInvestmentDetail(HoldingPosition position) {
+        if (position.getInvestmentDetail() != null) {
+            position.getInvestmentDetail().setPosition(null);
+            position.setInvestmentDetail(null);
         }
-
-        // orphanRemoval=true deletes the associated detail at flush.
-        position.setInvestmentDetail(null);
-    }
-
-    // handler methods
-    private HoldingPosition findOwnedPosition(UUID positionId, String userId) {
-        return holdingPositionRepository
-                .findByPositionIdAndUser_UserId(positionId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Holding position not found"));
     }
 
     private void applyFields(InvestmentDetail detail, String issuerName, String instrumentCode, String isin,
-                             String exchange, java.math.BigDecimal interestRate, LocalDate investmentDate, LocalDate maturityDate,
-                             BigDecimal maturityAmount) {
+                             String exchange, BigDecimal interestRate, LocalDate investmentDate,
+                             LocalDate maturityDate, BigDecimal maturityAmount) {
         detail.setIssuerName(normalize(issuerName));
         detail.setInstrumentCode(normalize(instrumentCode));
         detail.setIsin(normalizeIsin(isin));
@@ -123,10 +95,7 @@ public class InvestmentDetailService {
     }
 
     private String normalize(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
+        return (value == null || value.isBlank()) ? null : value.trim();
     }
 
     private String normalizeIsin(String isin) {

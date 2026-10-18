@@ -1,5 +1,6 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.dto.holdingposition;
 
+import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.InvestmentDetailResponse;
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.HoldingPosition;
 import app.netlify.subhacodes.arthabookapi.modules.finance.enums.HoldingStatus;
 
@@ -26,11 +27,13 @@ public record HoldingPositionResponse(
         HoldingStatus holdingStatus,
         String notes,
 
+        InvestmentDetailResponse investmentDetail,
+
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         Long version
 ) {
-    public HoldingPositionResponse(HoldingPosition position) {
+    public HoldingPositionResponse(HoldingPosition position, InvestmentDetailResponse investmentDetail) {
         this(
                 position.getPositionId(),
 
@@ -50,9 +53,20 @@ public record HoldingPositionResponse(
                 position.getHoldingStatus(),
                 position.getNotes(),
 
+                investmentDetail,
+
                 position.getCreatedAt(),
                 position.getUpdatedAt(),
                 position.getVersion()
+        );
+    }
+
+    public HoldingPositionResponse(HoldingPosition position) {
+        this(
+                position,
+                position.getInvestmentDetail() != null
+                        ? new InvestmentDetailResponse(position.getInvestmentDetail())
+                        : null
         );
     }
 }

@@ -4,6 +4,7 @@ import app.netlify.subhacodes.arthabookapi.modules.finance.entity.Transaction;
 import app.netlify.subhacodes.arthabookapi.modules.finance.enums.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -11,17 +12,22 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
+    @EntityGraph(attributePaths = {"position", "position.holding", "position.account"})
     Page<Transaction> findAllByUser_UserId(String userId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"position", "position.holding", "position.account"})
     Page<Transaction> findAllByUser_UserIdAndPosition_PositionId(String userId, UUID positionId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"position", "position.holding", "position.account"})
     Page<Transaction> findAllByUser_UserIdAndTransactionType(String userId, TransactionType transactionType,
                                                              Pageable pageable);
 
+    @EntityGraph(attributePaths = {"position", "position.holding", "position.account"})
     Page<Transaction> findAllByUser_UserIdAndPosition_PositionIdAndTransactionType(String userId, UUID positionId,
                                                                                    TransactionType transactionType,
                                                                                    Pageable pageable);
 
+    @EntityGraph(attributePaths = {"position", "position.holding", "position.account"})
     Optional<Transaction> findByTransactionIdAndUser_UserId(UUID transactionId, String userId);
 
 
