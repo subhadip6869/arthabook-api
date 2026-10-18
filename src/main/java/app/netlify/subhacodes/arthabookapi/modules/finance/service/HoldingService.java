@@ -1,5 +1,6 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.service;
 
+import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceInUseException;
 import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceNotFoundException;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.holding.CreateHoldingRequest;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.holding.HoldingResponse;
@@ -116,7 +117,7 @@ public class HoldingService {
         Holding holding = findOwnedHolding(holdingId, userId);
 
         if (positionRepository.existsByHolding_HoldingIdAndUser_UserId(holdingId, userId)) {
-            throw new IllegalStateException("Cannot delete holding with associated positions. Close or update its status instead.");
+            throw new ResourceInUseException("Cannot delete holding with associated positions. Close or update its status instead.");
         }
         holdingRepository.delete(holding);
     }

@@ -1,5 +1,6 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.service;
 
+import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceInUseException;
 import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceNotFoundException;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.account.AccountResponse;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.account.CreateAccountRequest;
@@ -76,7 +77,7 @@ public class AccountService {
         account.setNotes(normalize(request.notes()));
 
         accountRepository.flush();
-        
+
         return new AccountResponse(account);
     }
 
@@ -100,7 +101,7 @@ public class AccountService {
         // Guard: Prevent deletion if any holding positions are associated with this account
         // Check in HoldingPositionRepository:
         if (positionRepository.existsByAccount_AccountIdAndUser_UserId(accountId, userId)) {
-            throw new IllegalStateException("Cannot delete account with existing holding positions. Close the account instead.");
+            throw new ResourceInUseException("Cannot delete account with existing holding positions. Close the account instead.");
         }
         accountRepository.delete(account);
     }

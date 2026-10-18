@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleResourceAlreadyExistsException(ResourceAlreadyExistsException ex) {
         ErrorResponse response = new ErrorResponse(HttpStatus.CONFLICT.value(),
-                "CONFLICT",
+                "RESOURCE_ALREADY_EXISTS",
                 ex.getMessage(),
                 OffsetDateTime.now()
         );
@@ -79,23 +79,34 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
         ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "BAD_REQUEST",
+                HttpStatus.METHOD_NOT_ALLOWED.value(),
+                "METHOD_NOT_ALLOWED",
                 ex.getMessage(),
                 OffsetDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
+    @ExceptionHandler(ResourceInUseException.class)
+    public ResponseEntity<ErrorResponse> handleResourceInUseException(ResourceInUseException ex) {
         ErrorResponse response = new ErrorResponse(
-                HttpStatus.METHOD_NOT_ALLOWED.value(),
-                "METHOD_NOT_ALLOWED",
+                HttpStatus.CONFLICT.value(),
+                "RESOURCE_IN_USE",
                 ex.getMessage(),
                 OffsetDateTime.now()
         );
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "ILLEGAL_ARGUMENT",
+                ex.getMessage(),
+                OffsetDateTime.now()
+        );
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(Exception.class)

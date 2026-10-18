@@ -1,5 +1,6 @@
 package app.netlify.subhacodes.arthabookapi.modules.finance.service;
 
+import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceAlreadyExistsException;
 import app.netlify.subhacodes.arthabookapi.common.exceptions.ResourceNotFoundException;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.CreateInvestmentDetailRequest;
 import app.netlify.subhacodes.arthabookapi.modules.finance.dto.investmentdetail.InvestmentDetailResponse;
@@ -35,7 +36,7 @@ public class InvestmentDetailService {
         HoldingPosition position = findOwnedPosition(positionId, userId);
 
         if (investmentDetailRepository.existsById(positionId)) {
-            throw new IllegalStateException("Investment details already exist for this position");
+            throw new ResourceAlreadyExistsException("Investment details already exist for this position");
         }
 
         InvestmentDetail detail = new InvestmentDetail();
