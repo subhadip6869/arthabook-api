@@ -55,7 +55,7 @@ public class HoldingPositionService {
         position.setFolioNumber(normalize(request.folioNumber()));
         position.setNotes(normalize(request.notes()));
 
-        HoldingPosition savedPosition = holdingPositionRepository.save(position);
+        HoldingPosition savedPosition = holdingPositionRepository.saveAndFlush(position);
 
         return new HoldingPositionResponse(savedPosition);
     }
@@ -120,8 +120,7 @@ public class HoldingPositionService {
         position.setFolioNumber(normalize(request.folioNumber()));
         position.setNotes(normalize(request.notes()));
 
-        // No save() is needed: position is a managed entity.
-        // JPA dirty checking persists changes at transaction commit.
+        holdingPositionRepository.flush();
         return new HoldingPositionResponse(position);
     }
 
@@ -134,7 +133,14 @@ public class HoldingPositionService {
         HoldingPosition position = findOwnedPosition(positionId, userId);
         position.setHoldingStatus(status);
 
+        holdingPositionRepository.flush();
         return new HoldingPositionResponse(position);
+    }
+
+    @Transactional
+    public void deletePosition(UUID positionId, String userId) {
+        HoldingPosition position = findOwnedPosition(positionId, userId);
+        holdingPositionRepository.delete(position);
     }
 
     private HoldingPosition findOwnedPosition(UUID positionId, String userId) {
