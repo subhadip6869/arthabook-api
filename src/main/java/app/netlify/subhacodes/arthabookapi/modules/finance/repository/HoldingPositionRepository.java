@@ -53,4 +53,8 @@ public interface HoldingPositionRepository extends JpaRepository<HoldingPosition
             UUID positionId,
             String userId
     );
+
+    boolean existsByAccount_AccountIdAndUser_UserId(UUID accountId, String userId);
+
+    boolean existsByHolding_HoldingIdAndUser_UserId(UUID holdingId, String userId);
 }

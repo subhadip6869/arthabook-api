@@ -7,6 +7,7 @@ import app.netlify.subhacodes.arthabookapi.modules.finance.dto.holding.UpdateHol
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.Holding;
 import app.netlify.subhacodes.arthabookapi.modules.finance.enums.HoldingStatus;
 import app.netlify.subhacodes.arthabookapi.modules.finance.enums.HoldingType;
+import app.netlify.subhacodes.arthabookapi.modules.finance.repository.HoldingPositionRepository;
 import app.netlify.subhacodes.arthabookapi.modules.finance.repository.HoldingRepository;
 import app.netlify.subhacodes.arthabookapi.modules.profile.entity.User;
 import app.netlify.subhacodes.arthabookapi.modules.profile.repository.UserRepository;
@@ -22,13 +23,16 @@ import java.util.UUID;
 public class HoldingService {
     private final HoldingRepository holdingRepository;
     private final UserRepository userRepository;
+    private final HoldingPositionRepository positionRepository;
 
     public HoldingService(
             HoldingRepository holdingRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            HoldingPositionRepository positionRepository
     ) {
         this.holdingRepository = holdingRepository;
         this.userRepository = userRepository;
+        this.positionRepository = positionRepository;
     }
 
     @Transactional
@@ -43,7 +47,7 @@ public class HoldingService {
         holding.setCurrency(request.currency() == null ? "INR" : request.currency());
         holding.setNotes(normalize(request.notes()));
 
-        Holding savedHolding = holdingRepository.save(holding);
+        Holding savedHolding = holdingRepository.saveAndFlush(holding);
         return new HoldingResponse(savedHolding);
     }
 
@@ -89,6 +93,8 @@ public class HoldingService {
         holding.setCurrency(request.currency());
         holding.setNotes(normalize(request.notes()));
 
+        holdingRepository.flush();
+
         return new HoldingResponse(holding);
     }
 
@@ -100,8 +106,19 @@ public class HoldingService {
 
         Holding holding = findOwnedHolding(holdingId, userId);
         holding.setHoldingStatus(status);
+        holdingRepository.flush();
 
         return new HoldingResponse(holding);
+    }
+
+    @Transactional
+    public void deleteHolding(UUID holdingId, String userId) {
+        Holding holding = findOwnedHolding(holdingId, userId);
+
+        if (positionRepository.existsByHolding_HoldingIdAndUser_UserId(holdingId, userId)) {
+            throw new IllegalStateException("Cannot delete holding with associated positions. Close or update its status instead.");
+        }
+        holdingRepository.delete(holding);
     }
 
     // handler methods

@@ -7,6 +7,7 @@ import app.netlify.subhacodes.arthabookapi.modules.finance.dto.account.UpdateAcc
 import app.netlify.subhacodes.arthabookapi.modules.finance.entity.Account;
 import app.netlify.subhacodes.arthabookapi.modules.finance.enums.AccountStatus;
 import app.netlify.subhacodes.arthabookapi.modules.finance.repository.AccountRepository;
+import app.netlify.subhacodes.arthabookapi.modules.finance.repository.HoldingPositionRepository;
 import app.netlify.subhacodes.arthabookapi.modules.profile.entity.User;
 import app.netlify.subhacodes.arthabookapi.modules.profile.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -21,13 +22,16 @@ import java.util.UUID;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final HoldingPositionRepository positionRepository;
 
     public AccountService(
             AccountRepository accountRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            HoldingPositionRepository positionRepository
     ) {
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
+        this.positionRepository = positionRepository;
     }
 
     @Transactional
@@ -45,7 +49,7 @@ public class AccountService {
         account.setCurrency(request.currency() == null ? "INR" : request.currency());
         account.setNotes(normalize(request.notes()));
 
-        Account savedAccount = accountRepository.save(account);
+        Account savedAccount = accountRepository.saveAndFlush(account);
         return new AccountResponse(savedAccount);
     }
 
@@ -71,6 +75,8 @@ public class AccountService {
         account.setCurrency(request.currency());
         account.setNotes(normalize(request.notes()));
 
+        accountRepository.flush();
+        
         return new AccountResponse(account);
     }
 
@@ -82,8 +88,21 @@ public class AccountService {
 
         Account account = findOwnedAccount(accountId, userId);
         account.setAccountStatus(status);
+        accountRepository.flush();
 
         return new AccountResponse(account);
+    }
+
+    @Transactional
+    public void deleteAccount(UUID accountId, String userId) {
+        Account account = findOwnedAccount(accountId, userId);
+
+        // Guard: Prevent deletion if any holding positions are associated with this account
+        // Check in HoldingPositionRepository:
+        if (positionRepository.existsByAccount_AccountIdAndUser_UserId(accountId, userId)) {
+            throw new IllegalStateException("Cannot delete account with existing holding positions. Close the account instead.");
+        }
+        accountRepository.delete(account);
     }
 
     // handler methods
