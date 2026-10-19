@@ -3,13 +3,16 @@ FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /app
 
-# Cache Maven dependencies (only re-runs if pom.xml changes)
+# Cache dependencies and Maven plugins
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:resolve-plugins dependency:resolve -B
 
-# Copy application source code and compile JAR
+# Compile without redundant clean using parallel threads
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn package -DskipTests -T 1C -B
+
+# Extract Spring Boot 4 layers using the modern jarmode tools
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extracted
 
 
 # ---------- Runtime Stage ----------
@@ -17,24 +20,30 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Create non-root user for container security
-RUN addgroup -S spring && adduser -S -u 10014 spring -G spring
+# Create non-root user and group with explicit matching IDs
+RUN addgroup -g 10014 -S spring && adduser -u 10014 -S spring -G spring
 
-# Copy compiled JAR from build stage
-COPY --from=builder /app/target/*.jar app.jar
-RUN chown spring:spring app.jar
+# Copy extracted layers directly with ownership
+COPY --chown=10014:10014 --from=builder /app/extracted/dependencies/ ./
+COPY --chown=10014:10014 --from=builder /app/extracted/spring-boot-loader/ ./
+COPY --chown=10014:10014 --from=builder /app/extracted/snapshot-dependencies/ ./
+COPY --chown=10014:10014 --from=builder /app/extracted/application/ ./
+
 USER 10014
 
 EXPOSE 8080
 
-# Production container flags:
-# - MaxRAMPercentage=75.0 limits heap to ~384MB on a 512MB machine
-# - UseSerialGC removes multi-threaded GC memory overhead
-# - Xss256k trims thread stack footprint
-# - urandom prevents blocking during SSL/token crypto handshakes
+# Production runtime flags for Render:
+# - TieredStopAtLevel=1: stops JIT at C1 client compiler to avoid startup CPU starvation
+# - CICompilerCount=2: caps compiler thread count on shared host CPUs
+# - MaxRAMPercentage=75.0: caps heap at ~384MB on a 512MB RAM instance
+# - UseSerialGC: removes multi-threaded GC memory/CPU overhead
+# - Xss256k: reduces stack memory footprint per thread
 ENTRYPOINT ["java", \
+  "-XX:TieredStopAtLevel=1", \
+  "-XX:CICompilerCount=2", \
   "-XX:MaxRAMPercentage=75.0", \
   "-XX:+UseSerialGC", \
   "-Xss256k", \
   "-Djava.security.egd=file:/dev/./urandom", \
-  "-jar", "app.jar"]
+  "org.springframework.boot.loader.launch.JarLauncher"]

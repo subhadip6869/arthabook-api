@@ -1,28 +1,33 @@
-# ---------- Stage 1: Build ----------
+# ---------- Build Stage ----------
 FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 
 WORKDIR /app
 
-# Cache Maven dependencies
+# Cache dependencies and Maven plugins
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+RUN mvn dependency:resolve-plugins dependency:resolve -B
 
-# Copy source code and build package
+# Compile without redundant clean using parallel threads
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -T 1C -B
 
+# Extract Spring Boot 4 layers using the modern jarmode tools
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extracted
 
-# ---------- Stage 2: Runtime ----------
+# ---------- Runtime Stage ----------
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup -S spring && adduser -S -u 10014 spring -G spring
+# Create non-root user and group with explicit matching IDs
+RUN addgroup -g 10014 -S spring && adduser -u 10014 -S spring -G spring
 
-# Copy compiled JAR from Stage 1 (builder)
-COPY --from=builder /app/target/*.jar app.jar
-RUN chown spring:spring app.jar
+# Copy extracted layers directly with ownership
+COPY --chown=10014:10014 --from=builder /app/extracted/dependencies/ ./
+COPY --chown=10014:10014 --from=builder /app/extracted/spring-boot-loader/ ./
+COPY --chown=10014:10014 --from=builder /app/extracted/snapshot-dependencies/ ./
+COPY --chown=10014:10014 --from=builder /app/extracted/application/ ./
+
 USER 10014
 
 EXPOSE 80
@@ -31,9 +36,10 @@ EXPOSE 80
 ENTRYPOINT ["java", \
   "-XX:+TieredCompilation", \
   "-XX:TieredStopAtLevel=1", \
+  "-XX:CICompilerCount=2", \
   "-XX:+UseSerialGC", \
   "-Xms384m", \
   "-Xmx384m", \
   "-Xss256k", \
   "-Djava.security.egd=file:/dev/./urandom", \
-  "-jar", "app.jar"]
+  "org.springframework.boot.loader.launch.JarLauncher"]
