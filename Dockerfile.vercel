@@ -31,7 +31,8 @@ EXPOSE 80
 ENTRYPOINT ["java", \
   "-XX:+TieredCompilation", \
   "-XX:TieredStopAtLevel=1", \
-  "-Xms128m", \
+  "-XX:+UseSerialGC", \
+  "-Xms384m", \
   "-Xmx384m", \
   "-Xss256k", \
   "-Djava.security.egd=file:/dev/./urandom", \
