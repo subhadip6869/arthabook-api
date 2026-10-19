@@ -12,7 +12,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -T 1C -B
 
 # Extract Spring Boot 4 layers using the modern jarmode tools
-RUN java -Djarmode=tools -jar target/*.jar extract --layers --destination extracted
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --launcher --destination extracted
 
 # ---------- Runtime Stage ----------
 FROM eclipse-temurin:17-jre-alpine
